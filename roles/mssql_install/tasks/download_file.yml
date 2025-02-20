@@ -16,7 +16,7 @@
 
     - name: Downloading file to Ludus host
       ansible.builtin.get_url:
-        url: "{{ ludus_sccm_url }}"
+        url: "{{ ludus_sql_url }}"
         dest: "{{ ludus_install_directory }}/resources/sql/{{ ludus_sql_file_name }}"
         checksum: "{{ ludus_sccm_checksum | default(omit) }}"
         mode: "660"

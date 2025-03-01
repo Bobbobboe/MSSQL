@@ -31,12 +31,12 @@
     dns_hostname: '{{ ludus_sql_gmsa_account_username }}\{{ ludus_domain_fqdn }}'
     allowed_to_retrieve_password:
       set:
-        - '{{ inventory_hostname }}$'
+        - '{{ ansible_hostname }}.{{ ludus_domain_fqdn }}'
     state: present
     spn:
       set:
-        - 'MSSQLSvc/{{ inventory_hostname }}:1433'
-        - 'MSSQLSvc/{{ inventory_hostname }}.{{ ludus_domain_fqdn }}:1433'
+        - 'MSSQLSvc/{{ ansible_hostname }}:1433'
+        - 'MSSQLSvc/{{ ansible_hostname }}.{{ ludus_domain_fqdn }}:1433'
   vars:
     ansible_become: true
     ansible_become_method: runas

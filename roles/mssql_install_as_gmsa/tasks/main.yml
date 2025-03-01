@@ -25,13 +25,42 @@
       - Web-WMI
     state: present
 
+- name: Get the SID for the server
+  microsoft.ad.object_info:
+    ldap_filter: '(&(objectClass=computer)(cn={{ ansible_hostname }}))'
+    properties:
+      - objectSid
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ ludus_domain_fqdn }}\{{ defaults.ad_domain_admin }}'
+    ansible_become_password: '{{ defaults.ad_domain_admin_password }}'
+    ansible_become_flags: "logon_type=interactive logon_flags=with_profile"
+  register: server_hostname
+
+- name: Create KDS root key if not present
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      $Ansible.Changed = $false
+      if (-not (Get-KdsRootKey)) {
+          Add-KdsRootKey -EffectiveTime ((Get-Date).AddHours(-10))
+          $Ansible.Changed = $true
+      }
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ ludus_domain_fqdn }}\{{ defaults.ad_domain_admin }}'
+    ansible_become_password: '{{ defaults.ad_domain_admin_password }}'
+    ansible_become_flags: "logon_type=interactive logon_flags=with_profile"
+
 - name: Create SQL gMSA
   microsoft.ad.service_account:
     identity: '{{ ludus_sql_gmsa_account_username }}'
     dns_hostname: '{{ ludus_sql_gmsa_account_username }}\{{ ludus_domain_fqdn }}'
     allowed_to_retrieve_password:
       set:
-        - '{{ ansible_hostname }}.{{ ludus_domain_fqdn }}'
+        - '{{ server_hostname.objects[0].objectSid.Sid }}'
     state: present
     spn:
       set:
@@ -64,7 +93,7 @@
 
 - name: Setup SQL Server - This will take a while
   ansible.windows.win_shell: |
-    {{ disk_image_out.mount_paths[0] }}setup.exe /Q /IAcceptSQLServerLicenseTerms /ACTION="install" /FEATURES=SQL /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS={{ ludus_sql_sysadmin_accounts }} /SQLSVCACCOUNT='{{ ludus_domain_netbios_name }}\{{ ludus_sql_gmsa_account_username }}' /SQLMINMEMORY="1024" /SQLMAXMEMORY="16384"
+    {{ disk_image_out.mount_paths[0] }}setup.exe /Q /IAcceptSQLServerLicenseTerms /ACTION="install" /FEATURES=SQL /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS={{ ludus_sql_sysadmin_accounts }} /SQLSVCACCOUNT='{{ ludus_domain_netbios_name }}\{{ ludus_sql_gmsa_account_username }}$' /SQLMINMEMORY="1024" /SQLMAXMEMORY="16384"
   vars:
     ansible_become: true
     ansible_become_method: runas

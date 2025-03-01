@@ -31,7 +31,7 @@
     dns_hostname: '{{ ludus_sql_gmsa_account_username }}\{{ ludus_domain_fqdn }}'
     allowed_to_retrieve_password:
       set:
-        - '{{ inventory_hostname }}'
+        - '{{ inventory_hostname }}$'
     state: present
     spn:
       set:

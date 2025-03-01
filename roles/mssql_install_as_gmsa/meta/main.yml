@@ -2,9 +2,9 @@
 dependencies: []
 
 galaxy_info:
-  role_name: ludus_mssql
+  role_name: ludus_mssql_install_as_gmsa
   author: Bob Van der Smissen
-  description: Add a Microsoft SQL Server
+  description: Add a Microsoft SQL Server with gMSA
   company: None :D
   license: GPLv3
   min_ansible_version: "2.10"

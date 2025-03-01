@@ -2,7 +2,7 @@
 dependencies: []
 
 galaxy_info:
-  role_name: ludus_mssql
+  role_name: ludus_mssql_install_as_user
   author: Bob Van der Smissen
   description: Add a Microsoft SQL Server
   company: None :D

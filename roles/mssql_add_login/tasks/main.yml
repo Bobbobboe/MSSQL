@@ -1,0 +1,41 @@
+---
+- name: Create login
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      [CmdletBinding()]
+      param (
+          [String]
+          $Username,
+
+          [String]
+          $Password,
+
+          [bool]
+          $IsDomainLogin
+      )
+
+      $Ansible.Changed = $false
+
+      if($IsDomainLogin) {
+        $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT * FROM sys.server_principals WHERE (type = 'U' or type = 'G' ) AND name = '$Username'"
+        if (-not $exists) {
+            $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "CREATE LOGIN $Username FROM WINDOWS;"
+            if ($updated) {
+              $Ansible.Changed = $true
+            }
+        }
+      } 
+      else {
+          $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT * FROM sys.server_principals WHERE type = 'S' AND name = '$Username'"
+          if (-not $exists) {
+            $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "CREATE LOGIN $Username WITH PASSWORD = '$Password'; "
+            if ($updated) {
+              $Ansible.Changed = $true
+            }
+          }
+      }
+  parameters:
+    Username: '{{ sql_local_login_username }}'
+    Password: '{{ sql_local_login_password }}'
+    IsDomainLogin: '{{  sql_is_domain_login }}'

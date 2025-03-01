@@ -1,0 +1,4 @@
+---
+sql_local_login_username: test
+sql_local_login_password: test
+sql_is_domain_login: False

@@ -1,0 +1,5 @@
+---
+- name: Add Windows Group to MSSQLSERVER
+  ansible.windows.win_command: whoami
+  register: output
+

@@ -1,0 +1,1 @@
+# MSSQL install role based on SCCM role of Synzack

@@ -1,0 +1,80 @@
+---
+- name: Enable update service
+  ansible.windows.win_service:
+    name: Windows Update
+    state: started
+    start_mode: auto
+
+- name: Disable Domain firewall
+  community.windows.win_firewall:
+    state: disabled
+    profiles:
+      - Domain
+      - Public
+      - Private
+
+- name: Install .NET Windows Features
+  ansible.windows.win_feature:
+    name:
+      - NET-Framework-Core
+      - NET-Framework-45-Core
+      - RSAT
+      - Web-WebServer
+      - Web-Mgmt-Console
+      - Web-Metabase
+      - Web-WMI
+    state: present
+
+- name: Create SQL gMSA
+  microsoft.ad.service_account:
+    identity: '{{ ludus_sql_gmsa_account_username }}'
+    dns_hostname: '{{ ludus_sql_gmsa_account_username }}\{{ ludus_domain_fqdn }}'
+    allowed_to_retrieve_password:
+      set:
+        - '{{ inventory_hostname }}'
+    state: present
+    spn:
+      set:
+        - 'MSSQLSvc/{{ inventory_hostname }}:1433'
+        - 'MSSQLSvc/{{ inventory_hostname }}.{{ ludus_domain_fqdn }}:1433'
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ ludus_domain_fqdn }}\{{ defaults.ad_domain_admin }}'
+    ansible_become_password: '{{ defaults.ad_domain_admin_password }}'
+    ansible_become_flags: "logon_type=interactive logon_flags=with_profile"
+
+- name: Download SQL Server 2022
+  ansible.builtin.include_tasks:
+    file: download_file.yml
+  vars:
+    ludus_sql_file_name: SQLServer2022-x64-ENU.iso
+    ludus_sql_url: "{{ ludus_sql2022_url }}"
+    ludus_sql_host_path: "C:\\ludus\\sccm"
+
+- name: Mount SQL ISO
+  community.windows.win_disk_image:
+    image_path: C:\ludus\sccm\SQLServer2022-x64-ENU.iso
+    state: present
+  register: disk_image_out
+
+- name: Set admin account fact
+  ansible.builtin.set_fact:
+    ludus_sql_sysadmin_accounts: '{{ ludus_domain_netbios_name }}\{{ defaults.ad_domain_admin }} {{ ludus_domain_netbios_name }}\{{ ludus_sql_admin_group }}'
+
+- name: Setup SQL Server - This will take a while
+  ansible.windows.win_shell: |
+    {{ disk_image_out.mount_paths[0] }}setup.exe /Q /IAcceptSQLServerLicenseTerms /ACTION="install" /FEATURES=SQL /INSTANCENAME=MSSQLSERVER /SQLSYSADMINACCOUNTS={{ ludus_sql_sysadmin_accounts }} /SQLSVCACCOUNT='{{ ludus_domain_netbios_name }}\{{ ludus_sql_gmsa_account_username }}' /SQLMINMEMORY="1024" /SQLMAXMEMORY="16384"
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ ludus_domain_fqdn }}\{{ defaults.ad_domain_admin }}'
+    ansible_become_password: '{{ defaults.ad_domain_admin_password }}'
+    ansible_become_flags: "logon_type=interactive logon_flags=with_profile"
+  args:
+    creates: "C:\\Program Files\\Microsoft SQL Server\\MSSQL16.MSSQLSERVER\\MSSQL\\Binn\\sqlservr.exe"
+
+- name: Unmount ISO
+  community.windows.win_disk_image:
+    image_path: C:\ludus\sccm\SQLServer2022-x64-ENU.iso
+    state: absent

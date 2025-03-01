@@ -46,8 +46,8 @@
     state: present
     spn:
       set:
-        - 'MSSQLSvc/{{ inventory_hostname }}:1433'
-        - 'MSSQLSvc/{{ inventory_hostname }}.{{ ludus_domain_fqdn }}:1433'
+        - 'MSSQLSvc/{{ ansible_hostname }}:1433'
+        - 'MSSQLSvc/{{ ansible_hostname }}.{{ ludus_domain_fqdn }}:1433'
   vars:
     ansible_become: true
     ansible_become_method: runas

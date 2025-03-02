@@ -1,0 +1,3 @@
+---
+mssql_role_name: sysadmin
+mssql_grantee: admin

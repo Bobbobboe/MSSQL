@@ -1,0 +1,32 @@
+---
+- name: Grant role to user
+  ansible.windows.win_powershell:
+    error_action: stop
+    script: |
+      [CmdletBinding()]
+      param (
+          [String]
+          $Grantee,
+
+          [String]
+          $Rolename
+      )
+
+      $Ansible.Changed = $false
+
+      $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT IS_SRVROLEMEMBER('$Rolename', '$Grantee');"
+      if (-not $exists) {
+          $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "ALTER ROLE $Rolename ADD MEMBER $Grantee;"
+          if ($updated) {
+            $Ansible.Changed = $true
+          }
+      }
+    parameters:
+      Grantee: '{{ mssql_grantee }}'
+      Rolename: '{{ mssql_role_name }}'
+  vars:
+    ansible_become: true
+    ansible_become_method: runas
+    ansible_become_user: '{{ ludus_domain_fqdn }}\{{ defaults.ad_domain_admin }}'
+    ansible_become_password: '{{ defaults.ad_domain_admin_password }}'
+    ansible_become_flags: "logon_type=interactive logon_flags=with_profile"

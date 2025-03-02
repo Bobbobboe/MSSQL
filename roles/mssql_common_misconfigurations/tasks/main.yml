@@ -1,0 +1,23 @@
+---
+- name: Add Admin User with weak password
+  ansible.builtin.include_role:
+    name: mssql_add_login
+  vars:
+    sql_local_login_username: admin
+    sql_local_login_password: P@ssw0rd
+    sql_is_domain_login: False
+
+- name: Grant sysadmin role to admin user
+  ansible.builtin.include_role:
+    name: mssql_grant_role
+  vars:
+    mssql_role_name: sysadmin
+    mssql_grantee: admin
+
+- name: Add the BUILTIN\\Users group as a pubic login (old default)
+  ansible.builtin.include_role:
+    name: mssql_add_login
+  vars:
+    sql_local_login_username: '[BUILTIN\Users]'
+    sql_local_login_password: P@ssw0rd
+    sql_is_domain_login: False

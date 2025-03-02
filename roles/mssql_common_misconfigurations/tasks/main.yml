@@ -19,5 +19,18 @@
     name: mssql_add_login
   vars:
     sql_local_login_username: '[BUILTIN\Users]'
-    sql_local_login_password: P@ssw0rd
-    sql_is_domain_login: False
+    sql_is_domain_login: True
+
+- name: Add Kerberoastable user to the local administrators group
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members:
+      - '{{ ludus_domain_fqdn }}\{{ ludus_sql_svc_account_username }}'
+    state: present
+
+- name: Add Kerberoastable user to the SQL admins group
+  community.windows.win_domain_group_membership:
+    name: '{{ ludus_sql_admin_group }}'
+    members:
+      - '{{ ludus_sql_svc_account_username }}'
+    state: present

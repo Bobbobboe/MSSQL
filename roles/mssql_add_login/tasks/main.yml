@@ -20,19 +20,31 @@
       if($IsDomainLogin) {
         $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT * FROM sys.server_principals WHERE (type = 'U' or type = 'G' ) AND name = '$Username'"
         if (-not $exists) {
+          try {
             $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "CREATE LOGIN $Username FROM WINDOWS;"
             if ($updated) {
               $Ansible.Changed = $true
             }
+          }
+          catch {
+            echo "Something went wrong"
+          }
+
         }
       } 
       else {
           $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT * FROM sys.server_principals WHERE type = 'S' AND name = '$Username'"
           if (-not $exists) {
-            $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "CREATE LOGIN $Username WITH PASSWORD = '$Password'; "
-            if ($updated) {
-              $Ansible.Changed = $true
+            try {
+              $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "CREATE LOGIN $Username WITH PASSWORD = '$Password'; "
+              if ($updated) {
+                $Ansible.Changed = $true
+              }
             }
+            catch {
+              echo "Something went wrong"
+            }
+
           }
       }
     parameters:

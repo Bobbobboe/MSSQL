@@ -1,3 +1,5 @@
 ---
 mssql_role_name: sysadmin
 mssql_grantee: admin
+ludus_sql_svc_account_username: srv_sql
+ludus_sql_admin_group: SQL-Admins

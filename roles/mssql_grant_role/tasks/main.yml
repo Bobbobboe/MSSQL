@@ -16,7 +16,11 @@
 
       $exists = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "SELECT IS_SRVROLEMEMBER('$Rolename', '$Grantee');"
       if (-not $exists) {
+        try {
           $updated = Invoke-Sqlcmd -ServerInstance "localhost" -Database "msdb" -Query "ALTER ROLE $Rolename ADD MEMBER $Grantee;"
+        } catch {
+          echo "Already exists"
+        }
           if ($updated) {
             $Ansible.Changed = $true
           }
